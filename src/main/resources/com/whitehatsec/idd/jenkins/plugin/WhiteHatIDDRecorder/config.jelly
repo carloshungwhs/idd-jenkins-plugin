@@ -1,0 +1,38 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="${%Name}" field="name">
+    <f:textbox />
+  </f:entry>
+  <f:advanced>
+    <f:entry title="${%French}" field="useFrench"
+        description="${%FrenchDescr}">
+      <f:checkbox />
+    </f:entry>
+  </f:advanced>
+</j:jelly>
+
+<!--
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="API ID" field="apiId">
+    <f:textbox default="${instance.getAPIId()}"/>
+  </f:entry>
+
+  <f:advanced>
+    <f:section title="Connection Overrides">
+      <f:entry title="${%Credentials}" field="credentialId">
+        <c:select/>
+      </f:entry>
+      <f:entry title="API Scanner URL" field="apiHost">
+        <f:textbox value="${instance.getAPIHost()}" placeholder="${descriptor.getAPIHost()}"/>
+      </f:entry>
+      <f:entry title="Proxy Host" field="proxyHost">
+        <f:textbox value="${instance.getProxyHost()}" placeholder="${descriptor.getProxyHost()}"/>
+      </f:entry>
+      <f:entry title="Proxy Port" field="proxyPort">
+        <f:textbox value="${instance.getProxyPort()}" placeholder="${descriptor.getProxyPort()}"/>
+      </f:entry>
+    </f:section>
+  </f:advanced>
+</j:jelly>
+-->
