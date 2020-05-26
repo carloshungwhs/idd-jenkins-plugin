@@ -29,7 +29,7 @@ import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 
 public class WhiteHatIDDRecorder extends Recorder {
-  private Boolean useLocalConfig;
+  private boolean useLocalConfig;
   private String harSource;
   private Integer severityLevel;
   private Integer severityFailLevel;
@@ -37,7 +37,7 @@ public class WhiteHatIDDRecorder extends Recorder {
   private static final String IDD_HOME = "DIRECTED_DAST_HOME";
 
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(Boolean useLocalConfig, String harSource, Integer severityLevel, Integer severityFailLevel) {
+  public WhiteHatIDDRecorder(boolean useLocalConfig, String harSource, Integer severityLevel, Integer severityFailLevel) {
     this.useLocalConfig = useLocalConfig;
     this.harSource = harSource;
     this.severityLevel = severityLevel;
@@ -62,7 +62,7 @@ public class WhiteHatIDDRecorder extends Recorder {
 
   //@DataBoundSetter
   /*
-  public Boolean setUseLocalConfig() {
+  public boolean setUseLocalConfig() {
     return useLocalConfig;
   }
   */
