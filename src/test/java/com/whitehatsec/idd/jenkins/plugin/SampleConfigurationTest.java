@@ -1,10 +1,14 @@
 package com.whitehatsec.idd.jenkins.plugin;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
-import org.junit.Test;
-import static org.junit.Assert.*;
+
+import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
 
 public class SampleConfigurationTest {
@@ -21,6 +25,7 @@ public class SampleConfigurationTest {
      * <li>misnamed {@code textbox}
      * </ul>
      */
+    @Ignore
     @Test
     public void uiAndStorage() {
         rr.then(r -> {

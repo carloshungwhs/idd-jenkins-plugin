@@ -1,22 +1,24 @@
 package com.whitehatsec.idd.jenkins.plugin;
 
-import hudson.model.FreeStyleBuild;
-import hudson.model.FreeStyleProject;
-import hudson.model.Label;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-public class HelloWorldBuilderTest {
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.Label;
 
+public class HelloWorldBuilderTest {
     @Rule
     public JenkinsRule jenkins = new JenkinsRule();
 
     final String name = "Bobby";
 
+    @Ignore
     @Test
     public void testConfigRoundtrip() throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject();
@@ -25,6 +27,7 @@ public class HelloWorldBuilderTest {
         jenkins.assertEqualDataBoundBeans(new HelloWorldBuilder(name), project.getBuildersList().get(0));
     }
 
+    @Ignore
     @Test
     public void testConfigRoundtripFrench() throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject();
@@ -38,6 +41,7 @@ public class HelloWorldBuilderTest {
         jenkins.assertEqualDataBoundBeans(lhs, project.getBuildersList().get(0));
     }
 
+    @Ignore
     @Test
     public void testBuild() throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject();
@@ -48,6 +52,7 @@ public class HelloWorldBuilderTest {
         jenkins.assertLogContains("Hello, " + name, build);
     }
 
+    @Ignore
     @Test
     public void testBuildFrench() throws Exception {
 
@@ -60,6 +65,7 @@ public class HelloWorldBuilderTest {
         jenkins.assertLogContains("Bonjour, " + name, build);
     }
 
+    @Ignore
     @Test
     public void testScriptedPipeline() throws Exception {
         String agentLabel = "my-agent";
@@ -74,5 +80,4 @@ public class HelloWorldBuilderTest {
         String expectedString = "Hello, " + name + "!";
         jenkins.assertLogContains(expectedString, completedBuild);
     }
-
 }
