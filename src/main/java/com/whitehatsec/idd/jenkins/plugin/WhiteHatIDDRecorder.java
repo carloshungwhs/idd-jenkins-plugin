@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 
 import hudson.EnvVars;
 import hudson.Extension;
@@ -40,10 +39,8 @@ import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import net.sf.json.JSONObject;
 
 public class WhiteHatIDDRecorder extends Recorder {
-  private boolean useLocalConfig;
   private String harSource;
   private String severityLevel;
   private String severityFailLevel;
@@ -52,8 +49,7 @@ public class WhiteHatIDDRecorder extends Recorder {
 
   // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(boolean useLocalConfig, String harSource, String severityLevel, String severityFailLevel) {
-    this.useLocalConfig = useLocalConfig;
+  public WhiteHatIDDRecorder(String harSource, String severityLevel, String severityFailLevel) {
     this.harSource = harSource;
     this.severityLevel = severityLevel;
     this.severityFailLevel = severityFailLevel;
@@ -69,10 +65,6 @@ public class WhiteHatIDDRecorder extends Recorder {
 
   public String getSeverityFailLevel() {
     return severityFailLevel;
-  }
-
-  public boolean isUseLocalConfig() {
-    return useLocalConfig;
   }
 
   private Configuration readSettings(String fname) throws FileNotFoundException, UnsupportedEncodingException, IOException {
@@ -186,11 +178,6 @@ public class WhiteHatIDDRecorder extends Recorder {
   @Symbol("idd")
   @Extension
   public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-
-    private String harSource;
-    private String severityLevel;
-    private String severityFailLevel;
-
     public DescriptorImpl() {
       load();
     }
@@ -205,44 +192,17 @@ public class WhiteHatIDDRecorder extends Recorder {
       return Messages.WhiteHatIDDRecorderBuilder_DescriptorImpl_DisplayName();
     }
 
-    // call on save global config
-    @Override
-    public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
-      harSource = json.getString("harSource");
-      severityLevel = json.getString("severityLevel");
-      severityFailLevel= json.getString("severityFailLevel");
-
-      save();
-      return super.configure(req, json);
-    }
-
-    public String getHarSource() {
-      return harSource;
-    }
-
-    public String getSeverityLevel() {
-      return severityLevel;
-    }
-
-    public void setSeverityLevel(String severityLevel) {
-      this.severityLevel = severityLevel;
-    }
-
     public String defaultSeverityLevel() {
       return Severity.HIGH.level;
-    }
-
-    public String getSeverityFailLevel() {
-      return severityFailLevel;
     }
 
     public String defaultSeverityFailLevel() {
       return Severity.NOTE.level;
     }
 
-    public FormValidation doCheckHarPath(@QueryParameter String value) throws IOException, ServletException {
+    public FormValidation doCheckHarSource(@QueryParameter String value) throws IOException, ServletException {
       if (StringUtils.isBlank(value)) {
-        return FormValidation.error(Messages.WhiteHatIDDRecorderBuilder_DescriptionImpl_errors_requiredHarPath());
+        return FormValidation.error(Messages.WhiteHatIDDRecorderBuilder_DescriptionImpl_errors_requiredHarSource());
       }
       return FormValidation.ok();
     }
