@@ -1,9 +1,23 @@
 package com.whitehatsec.idd.jenkins.plugin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.Map;
 
 import javax.servlet.ServletException;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
@@ -20,24 +34,25 @@ import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Node;
 import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
 
 public class WhiteHatIDDRecorder extends Recorder {
   private boolean useLocalConfig;
   private String harSource;
-  private Integer severityLevel;
-  private Integer severityFailLevel;
+  private String severityLevel;
+  private String severityFailLevel;
 
   private static final String IDD_HOME = "DIRECTED_DAST_HOME";
 
+  // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(boolean useLocalConfig, String harSource, Integer severityLevel, Integer severityFailLevel) {
+  public WhiteHatIDDRecorder(boolean useLocalConfig, String harSource, String severityLevel, String severityFailLevel) {
     this.useLocalConfig = useLocalConfig;
     this.harSource = harSource;
     this.severityLevel = severityLevel;
@@ -48,11 +63,11 @@ public class WhiteHatIDDRecorder extends Recorder {
     return harSource;
   }
 
-  public Integer getSeverityLevel() {
+  public String getSeverityLevel() {
     return severityLevel;
   }
 
-  public Integer getSeverityFailLevel() {
+  public String getSeverityFailLevel() {
     return severityFailLevel;
   }
 
@@ -60,55 +75,105 @@ public class WhiteHatIDDRecorder extends Recorder {
     return useLocalConfig;
   }
 
-  //@DataBoundSetter
-  /*
-  public boolean setUseLocalConfig() {
-    return useLocalConfig;
+  private Configuration readSettings(String fname) throws FileNotFoundException, UnsupportedEncodingException, IOException {
+    Gson gson = new Gson();
+
+    try {
+      InputStream inputStream = new FileInputStream(fname);
+      Reader destFileReader = new InputStreamReader(inputStream, "UTF-8");
+
+      Configuration config = gson.fromJson(destFileReader, Configuration.class);
+      destFileReader.close();
+
+      return config;
+    } catch (Exception e) {
+      throw e;
+    }
   }
-  */
+
+  private void saveSettings(Configuration config, String fname) throws IOException {
+    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    try {
+      OutputStream fileStream = new FileOutputStream(fname);
+      Writer writer = new OutputStreamWriter(fileStream, "UTF-8");
+
+      gson.toJson(config, writer); 
+      writer.close();
+    } catch (IOException e) {
+      throw e;
+    }
+  }
 
   @Override
   public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
       throws InterruptedException, IOException {
+
     EnvVars env = build.getEnvironment(listener);
-    String workspace = env.get("WORKSPACE");
-    String iddHome = env.get(IDD_HOME);
-    String harSource = StringUtils.isNotBlank(getHarSource()) ? getHarSource() : getDescriptor().getHarSource();
-
-    listener.getLogger().println("WHS => Jenkins Home = " + env.get("JENKINS_HOME"));
-    listener.getLogger().println("WHS => workspace = " + workspace);
-    listener.getLogger().println("WHS => directed_dast_home = " + iddHome);
-    listener.getLogger().println("WHS => HAR Source = " + harSource);
-
-    String iddExe = String.format("%s/target/directed-dast-common", iddHome);
-    String harPath = String.format("%s/%s", iddHome, harSource);
-    String cmdLine = String.format("%s %s", iddExe, harPath);
-
-    listener.getLogger().println("WHS => harPath = " + harPath);
-
     FilePath ws = build.getWorkspace();
     if (ws == null) {
-      Node node = build.getBuiltOn();
-      if (node == null) {
-        throw new NullPointerException("no such build node: " + build.getBuiltOnStr());
-      }
-      throw new NullPointerException("no workspace from node " + node + " which is computer " + node.toComputer() + " and has channel " + node.getChannel());
+      throw new IllegalStateException("workspace does not yet exist for this job " + env.get("JOB_NAME"));
     }
+
+    String iddHome = env.get(IDD_HOME);
+
+    // TODO: Be able to read settings.default.json packaged in hpi
+    FilePath srcFilePath = new FilePath(new File(iddHome, "/resources/settings.default.json"));
+    FilePath destFilePath = ws.child("settings-jenkins-" + env.get("JOB_NAME") + ".json");
 
     int res = -1;
     try {
-      EnvVars envVars = build.getEnvironment(listener);
+      /*
+      String location = Jenkins.get().getPlugin("directed-dast").getWrapper().baseResourceURL.getFile();
+      listener.getLogger().println("location = %s" + location);
+
+      FilePath locationFilePath = new FilePath(new File(location));
+
+      FilePath indexFilePath = new FilePath(new File(location, "index.jelly"));
+      FilePath settingsFilePath = new FilePath(new File(location, "settings.debug.json"));
+      listener.getLogger().println("index.jelly = " + indexFilePath);
+      listener.getLogger().println("settingsFilePath = " + settingsFilePath);
+
+      if (indexFilePath.exists()) {
+        listener.getLogger().println("index.jelly exists");
+      }
+      if (settingsFilePath.exists()) {
+        listener.getLogger().println("settings.debug.json exists");
+      }
+      */
+
+      if (destFilePath.exists() && destFilePath.length() > 0) {
+        listener.getLogger().println("settings file " + destFilePath);
+      } else {
+        listener.getLogger().println("copy settings " + srcFilePath + " to " + destFilePath);
+        destFilePath.copyFrom(srcFilePath);
+      }
+
+      listener.getLogger().println("read settings " + destFilePath);
+      Configuration config = readSettings(destFilePath.getRemote());
+
+      // update settings
+      config.setSeverityLevel(severityLevel);
+      config.setSeverityFailLevel(severityFailLevel);
+
+      listener.getLogger().println("save settings " + destFilePath);
+      saveSettings(config, destFilePath.getRemote());
+
       // on Windows environment variables are converted to all upper case,
       // but no such conversions are done on Unix, so to make this cross-platform,
       // convert variables to all upper cases.
       for (Map.Entry<String,String> e : build.getBuildVariables().entrySet())
-        envVars.put(e.getKey(),e.getValue());
+        env.put(e.getKey(),e.getValue());
 
-      res = (launcher.launch().cmdAsSingleString(cmdLine).envs(envVars).stdout(listener).pwd(ws).start()).join();
+      String cmdLine = String.format("directed-dast-common -settings-file %s %s", destFilePath, harSource);
+
+      res = (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(ws).start()).join();
       if (res == 0) build.setResult(Result.SUCCESS);
     } catch (IOException e) {
       Util.displayIOException(e, listener);
       Functions.printStackTrace(e, listener.fatalError(Messages.WhiteHatIDDRecorderBuilder_CommandFailed()));
+    } catch (InterruptedException e) {
+      Functions.printStackTrace(e, listener.fatalError(Messages.WhiteHatIDDRecorderBuilder_JobInterrupted()));
     }
     return res == 0;
   }
@@ -123,8 +188,8 @@ public class WhiteHatIDDRecorder extends Recorder {
   public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
     private String harSource;
-    private Integer severityLevel;
-    private Integer severityFailLevel;
+    private String severityLevel;
+    private String severityFailLevel;
 
     public DescriptorImpl() {
       load();
@@ -140,11 +205,12 @@ public class WhiteHatIDDRecorder extends Recorder {
       return Messages.WhiteHatIDDRecorderBuilder_DescriptorImpl_DisplayName();
     }
 
+    // call on save global config
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
       harSource = json.getString("harSource");
-      //severityLevel = json.getInt("severityLevel");
-      //severityFailLevel= json.getInt("severityFailLevel");
+      severityLevel = json.getString("severityLevel");
+      severityFailLevel= json.getString("severityFailLevel");
 
       save();
       return super.configure(req, json);
@@ -154,24 +220,24 @@ public class WhiteHatIDDRecorder extends Recorder {
       return harSource;
     }
 
-    public void setHarSource(String harSource) {
-      this.harSource = harSource;
-    }
-
-    public Integer getSeverityLevel() {
+    public String getSeverityLevel() {
       return severityLevel;
     }
 
-    public void setSeverityLevel(Integer severityLevel) {
+    public void setSeverityLevel(String severityLevel) {
       this.severityLevel = severityLevel;
     }
 
-    public Integer getSeverityFailLevel() {
+    public String defaultSeverityLevel() {
+      return Severity.HIGH.level;
+    }
+
+    public String getSeverityFailLevel() {
       return severityFailLevel;
     }
 
-    public void setSeverityFailLevel(Integer severityFailLevel) {
-      this.severityFailLevel = severityFailLevel;
+    public String defaultSeverityFailLevel() {
+      return Severity.NOTE.level;
     }
 
     public FormValidation doCheckHarPath(@QueryParameter String value) throws IOException, ServletException {
@@ -179,6 +245,22 @@ public class WhiteHatIDDRecorder extends Recorder {
         return FormValidation.error(Messages.WhiteHatIDDRecorderBuilder_DescriptionImpl_errors_requiredHarPath());
       }
       return FormValidation.ok();
+    }
+
+    public ListBoxModel doFillSeverityLevelItems() {
+      return fillSeverityItems();
+    }
+
+    public ListBoxModel doFillSeverityFailLevelItems() {
+      return fillSeverityItems();
+    }
+
+    private ListBoxModel fillSeverityItems() {
+      ListBoxModel items = new ListBoxModel();
+      for (Severity severity : Severity.values()) {
+        items.add(severity.name(), severity.level);
+      }
+      return items;
     }
   }
 }
