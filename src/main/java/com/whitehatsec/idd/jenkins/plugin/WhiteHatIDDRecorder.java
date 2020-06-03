@@ -29,6 +29,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Functions;
 import hudson.Launcher;
+import hudson.Plugin;
 import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -39,6 +40,7 @@ import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
 
 public class WhiteHatIDDRecorder extends Recorder {
   private String harSource;
@@ -106,34 +108,25 @@ public class WhiteHatIDDRecorder extends Recorder {
     if (ws == null) {
       throw new IllegalStateException("workspace does not yet exist for this job " + env.get("JOB_NAME"));
     }
+    listener.getLogger().println("workspace path = " + ws);
 
-    String iddHome = env.get(IDD_HOME);
-
-    // TODO: Be able to read settings.default.json packaged in hpi
-    FilePath srcFilePath = new FilePath(new File(iddHome, "/resources/settings.default.json"));
-    FilePath destFilePath = ws.child("settings-jenkins-" + env.get("JOB_NAME") + ".json");
+    String webAppPath = "";
+    Plugin plugin = Jenkins.get().getPlugin("directed-dast");
+    if (plugin != null) {
+      webAppPath = plugin.getWrapper().baseResourceURL.getFile();
+    }
+    listener.getLogger().println("webapp path = " + webAppPath);
 
     int res = -1;
     try {
-      /*
-      String location = Jenkins.get().getPlugin("directed-dast").getWrapper().baseResourceURL.getFile();
-      listener.getLogger().println("location = %s" + location);
-
-      FilePath locationFilePath = new FilePath(new File(location));
-
-      FilePath indexFilePath = new FilePath(new File(location, "index.jelly"));
-      FilePath settingsFilePath = new FilePath(new File(location, "settings.debug.json"));
-      listener.getLogger().println("index.jelly = " + indexFilePath);
-      listener.getLogger().println("settingsFilePath = " + settingsFilePath);
-
-      if (indexFilePath.exists()) {
-        listener.getLogger().println("index.jelly exists");
+      FilePath srcFilePath = new FilePath(new File(webAppPath, "settings.default.json"));
+      if (srcFilePath.exists()) {
+        listener.getLogger().println(srcFilePath + " exists");
+      } else {
+        listener.getLogger().println(srcFilePath + " does NOT exists");
       }
-      if (settingsFilePath.exists()) {
-        listener.getLogger().println("settings.debug.json exists");
-      }
-      */
 
+      FilePath destFilePath = ws.child("idd-settings-jenkins-job-" + env.get("JOB_NAME") + ".json");
       if (destFilePath.exists() && destFilePath.length() > 0) {
         listener.getLogger().println("settings file " + destFilePath);
       } else {
@@ -157,7 +150,8 @@ public class WhiteHatIDDRecorder extends Recorder {
       for (Map.Entry<String,String> e : build.getBuildVariables().entrySet())
         env.put(e.getKey(),e.getValue());
 
-      String cmdLine = String.format("directed-dast-common -settings-file %s %s", destFilePath, harSource);
+      //String cmdLine = String.format("/Users/carloshung/work/repos/idd/directed-dast-common/target/directed-dast-common -settings-file %s %s", destFilePath, harSource);
+      String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), destFilePath, harSource);
 
       res = (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(ws).start()).join();
       if (res == 0) build.setResult(Result.SUCCESS);
