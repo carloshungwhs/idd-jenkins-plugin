@@ -1,0 +1,49 @@
+{
+  "applyDebugHeader": true,
+  "excludedUrls": [
+    "logout"
+  ],
+  "excludedAttackUrls": [],
+  "excludedFileExtensions": [
+    "jpg",
+    "ico",
+    "png",
+    "gif",
+    "js",
+    "css",
+    "woff",
+    "ttf",
+    "woff2",
+    "jpeg",
+    "css",
+    "axd",
+    "svg"
+  ],
+  "excludedParameters": [
+    "jsessionid",
+    "__EVENTARGUMENT",
+    "__EVENTTARGET",
+    "__EVENTVALIDATION",
+    "__VIEWSTATE"
+  ],
+  "allowedHosts": [],
+  "hosts": {
+    "localhost:27374": {
+      "substitute": "localhost:3000",
+      "enable": true
+    }
+  },
+  "customHeaders": {},
+  "customCookies": {},
+  "proxyServer": "",
+  "requestOptions": {
+    "requestDelay": 0,
+    "retryCount": 1,
+    "timeout": 5000
+  },
+  "attackModules": [],
+  "disablePassiveModules": false,
+  "includeEvidence": true,
+  "severityReportLevel": "High",
+  "severityFailLevel": "Note"
+}

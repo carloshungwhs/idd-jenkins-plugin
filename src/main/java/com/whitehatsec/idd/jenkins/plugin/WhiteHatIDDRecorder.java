@@ -44,16 +44,16 @@ import jenkins.model.Jenkins;
 
 public class WhiteHatIDDRecorder extends Recorder {
   private String harSource;
-  private String severityLevel;
+  private String severityReportLevel;
   private String severityFailLevel;
 
   private static final String IDD_HOME = "DIRECTED_DAST_HOME";
 
   // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(String harSource, String severityLevel, String severityFailLevel) {
+  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel) {
     this.harSource = harSource;
-    this.severityLevel = severityLevel;
+    this.severityReportLevel = severityReportLevel;
     this.severityFailLevel = severityFailLevel;
   }
 
@@ -61,8 +61,8 @@ public class WhiteHatIDDRecorder extends Recorder {
     return harSource;
   }
 
-  public String getSeverityLevel() {
-    return severityLevel;
+  public String getSeverityReportLevel() {
+    return severityReportLevel;
   }
 
   public String getSeverityFailLevel() {
@@ -108,22 +108,21 @@ public class WhiteHatIDDRecorder extends Recorder {
     if (ws == null) {
       throw new IllegalStateException("workspace does not yet exist for this job " + env.get("JOB_NAME"));
     }
-    listener.getLogger().println("workspace path = " + ws);
 
     String webAppPath = "";
     Plugin plugin = Jenkins.get().getPlugin("directed-dast");
     if (plugin != null) {
       webAppPath = plugin.getWrapper().baseResourceURL.getFile();
     }
-    listener.getLogger().println("webapp path = " + webAppPath);
+    listener.getLogger().println("webapp path " + webAppPath);
 
     int res = -1;
     try {
       FilePath srcFilePath = new FilePath(new File(webAppPath, "settings.default.json"));
       if (srcFilePath.exists()) {
-        listener.getLogger().println(srcFilePath + " exists");
+        listener.getLogger().println("default settings exists " + srcFilePath);
       } else {
-        listener.getLogger().println(srcFilePath + " does NOT exists");
+        listener.getLogger().println("default settings does NOT exist " + srcFilePath);
       }
 
       FilePath destFilePath = ws.child("idd-settings-jenkins-job-" + env.get("JOB_NAME") + ".json");
@@ -138,7 +137,7 @@ public class WhiteHatIDDRecorder extends Recorder {
       Configuration config = readSettings(destFilePath.getRemote());
 
       // update settings
-      config.setSeverityLevel(severityLevel);
+      config.setSeverityReportLevel(severityReportLevel);
       config.setSeverityFailLevel(severityFailLevel);
 
       listener.getLogger().println("save settings " + destFilePath);
@@ -150,7 +149,7 @@ public class WhiteHatIDDRecorder extends Recorder {
       for (Map.Entry<String,String> e : build.getBuildVariables().entrySet())
         env.put(e.getKey(),e.getValue());
 
-      //String cmdLine = String.format("/Users/carloshung/work/repos/idd/directed-dast-common/target/directed-dast-common -settings-file %s %s", destFilePath, harSource);
+      listener.getLogger().println("env var " + IDD_HOME + " is " + env.get(IDD_HOME));
       String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), destFilePath, harSource);
 
       res = (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(ws).start()).join();
@@ -186,7 +185,7 @@ public class WhiteHatIDDRecorder extends Recorder {
       return Messages.WhiteHatIDDRecorderBuilder_DescriptorImpl_DisplayName();
     }
 
-    public String defaultSeverityLevel() {
+    public String defaultSeverityReportLevel() {
       return Severity.HIGH.level;
     }
 
@@ -201,7 +200,7 @@ public class WhiteHatIDDRecorder extends Recorder {
       return FormValidation.ok();
     }
 
-    public ListBoxModel doFillSeverityLevelItems() {
+    public ListBoxModel doFillSeverityReportLevelItems() {
       return fillSeverityItems();
     }
 

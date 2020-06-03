@@ -4,8 +4,8 @@
     <f:entry title="${%HARSource}" field="harSource">
       <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
     </f:entry>
-    <f:entry title="${%SeverityLevel}" field="severityLevel">
-      <f:select default="${descriptor.defaultSeverityLevel()}"/>
+    <f:entry title="${%SeverityReportLevel}" field="severityReportLevel">
+      <f:select default="${descriptor.defaultSeverityReportLevel()}"/>
     </f:entry>
     <f:entry title="${%SeverityFailLevel}" field="severityFailLevel">
       <f:select default="${descriptor.defaultSeverityFailLevel()}"/>
@@ -20,8 +20,8 @@
       <f:entry title="${%HARSource}" field="harSource" description="${%HARSourceDesc}">
         <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
       </f:entry>
-      <f:entry title="${%SeverityLevel}" field="severityLevel">
-        <f:select default="${descriptor.defaultSeverityLevel()}"/>
+      <f:entry title="${%SeverityReportLevel}" field="severityReportLevel">
+        <f:select default="${descriptor.defaultSeverityReportLevel()}"/>
       </f:entry>
       <f:entry title="${%SeverityFailLevel}" field="severityFailLevel">
         <f:select default="${descriptor.defaultSeverityFailLevel()}"/>

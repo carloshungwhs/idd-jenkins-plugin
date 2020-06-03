@@ -12,7 +12,7 @@ public class Configuration {
   private boolean disablePassiveModules;
   private List<String> allowedHosts;
   private boolean includeEvidence;
-  private String severityLevel;
+  private String severityReportLevel;
   private String severityFailLevel;
 
   public boolean isApplyDebugHeader() {
@@ -87,12 +87,12 @@ public class Configuration {
     this.includeEvidence = includeEvidence;
   }
 
-  public String getSeverityLevel() {
-    return severityLevel;
+  public String getSeverityReportLevel() {
+    return severityReportLevel;
   }
 
-  public void setSeverityLevel(String severityLevel) {
-    this.severityLevel = severityLevel;
+  public void setSeverityReportLevel(String severityReportLevel) {
+    this.severityReportLevel = severityReportLevel;
   }
 
   public String getSeverityFailLevel() {
@@ -150,7 +150,7 @@ public class Configuration {
   "customCookies": {
   },
   "includeEvidence": true,
-  "severityLevel": "High",
+  "severityReportLevel": "High",
   "severityFailLevel": "Note"
 }
 */
