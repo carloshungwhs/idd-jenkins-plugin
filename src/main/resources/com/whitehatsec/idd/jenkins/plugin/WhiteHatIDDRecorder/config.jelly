@@ -1,16 +1,50 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:section title="${%ConfigOverride}">
-    <f:entry title="${%HARSource}" field="harSource">
-      <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
-    </f:entry>
-    <f:entry title="${%SeverityReportLevel}" field="severityReportLevel">
-      <f:select default="${descriptor.defaultSeverityReportLevel()}"/>
-    </f:entry>
-    <f:entry title="${%SeverityFailLevel}" field="severityFailLevel">
-      <f:select default="${descriptor.defaultSeverityFailLevel()}"/>
-    </f:entry>
+  <f:entry title="${%HARSource}" field="harSource">
+    <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
+  </f:entry>
+  <f:entry title="${%SeverityReportLevel}" field="severityReportLevel">
+    <f:select default="${descriptor.defaultSeverityReportLevel()}"/>
+  </f:entry>
+  <f:entry title="${%SeverityFailLevel}" field="severityFailLevel">
+    <f:select default="${descriptor.defaultSeverityFailLevel()}"/>
+  </f:entry>
+  <f:section title="Host URL Mapping">
+    <f:block>
+      <f:entry field="mapHost">
+        <table width="100%">
+          <tr>
+            <th>Current Host</th>
+            <th>New Host</th>
+          </tr>
+          <tr>
+            <td><f:textbox field="fromHost" placeholder="${descriptor.getFromHost()}"/></td>
+            <td><f:textbox field="toHost" placeholder="${descriptor.getToHost()}"/></td>
+          </tr>
+        </table>
+      </f:entry>
+    </f:block>
   </f:section>
+
+<!--
+      <f:entry help="/descriptor/org.jenkinsci.plugins.zap.ZAPCmdLine/help/config">
+      <f:repeatableProperty field="cmdLinesZAP" add="${%jenkins.jobconfig.zap.config.cmdlineargs.addargs.button}" />
+  <f:entry help="/descriptor/org.jenkinsci.plugins.zap.ZAPCmdLine/help/config">
+  <table width="100%">
+    <tr>
+      <th>${%jenkins.jobconfig.zap.config.cmdlineargs.optionarg.textbox.label}</th>
+      <th>${%jenkins.jobconfig.zap.config.cmdlineargs.valuearg.textbox.label}</th>
+    </tr>
+    <tr>
+      <td><f:textbox field="cmdLineOption"/></td>
+      <td><f:textbox field="cmdLineValue"/></td>
+    </tr>
+    <tr>
+      <td colspan="2" align="right"><f:repeatableDeleteButton value="${%Delete}"/></td>
+    </tr>
+  </table>
+  </f:entry>
+-->
 
 <!--
   <f:optionalBlock title="${%OverrideGlobalConfig}" name ="useLocalConfig"

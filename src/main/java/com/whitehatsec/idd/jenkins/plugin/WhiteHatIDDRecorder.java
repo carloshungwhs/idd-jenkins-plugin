@@ -46,15 +46,19 @@ public class WhiteHatIDDRecorder extends Recorder {
   private String harSource;
   private String severityReportLevel;
   private String severityFailLevel;
+  private String fromHost;
+  private String toHost;
 
   private static final String IDD_HOME = "DIRECTED_DAST_HOME";
 
   // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel) {
+  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel, String fromHost, String toHost) {
     this.harSource = harSource;
     this.severityReportLevel = severityReportLevel;
     this.severityFailLevel = severityFailLevel;
+    this.fromHost = fromHost;
+    this.toHost = toHost;
   }
 
   public String getHarSource() {
@@ -67,6 +71,60 @@ public class WhiteHatIDDRecorder extends Recorder {
 
   public String getSeverityFailLevel() {
     return severityFailLevel;
+  }
+
+  public String getFromHost() {
+    return fromHost;
+  }
+
+  public String getToHost() {
+    return toHost;
+  }
+
+  private String getSettingsPath(EnvVars env, FilePath ws, BuildListener listener) throws IOException, InterruptedException {
+    String webAppPath = "";
+    Plugin plugin = Jenkins.get().getPlugin("directed-dast");
+    if (plugin != null) {
+      webAppPath = plugin.getWrapper().baseResourceURL.getFile();
+    }
+    listener.getLogger().println("webapp path " + webAppPath);
+
+    try {
+      FilePath srcFilePath = new FilePath(new File(webAppPath, "settings.default.json"));
+      if (srcFilePath.exists()) {
+        listener.getLogger().println("default settings exists " + srcFilePath);
+      } else {
+        listener.getLogger().println("default settings does NOT exist " + srcFilePath);
+      }
+
+      FilePath destFilePath = ws.child("idd-settings-jenkins-job-" + env.get("JOB_NAME") + ".json");
+      if (destFilePath.exists() && destFilePath.length() > 0) {
+        listener.getLogger().println("settings file " + destFilePath);
+      } else {
+        listener.getLogger().println("copy settings " + srcFilePath + " to " + destFilePath);
+        destFilePath.copyFrom(srcFilePath);
+      }
+      return destFilePath.getRemote();
+    } catch (IOException|InterruptedException e) {
+      throw e;
+    }
+  }
+
+  private String getHarSourcePath(EnvVars env, FilePath ws, BuildListener listener) throws IOException, InterruptedException {
+    try {
+      File file = new File(harSource);
+      if (file.isAbsolute()) {
+        return harSource;
+      }
+      FilePath harSourceFilePath = ws.child(harSource);
+      if (!harSourceFilePath.exists()) {
+        listener.getLogger().println("HAR file does NOT exist: " + harSourceFilePath);
+        return harSource;
+      }
+      return harSourceFilePath.getRemote();
+    } catch (IOException|InterruptedException e) {
+      throw e;
+    }
   }
 
   private Configuration readSettings(String fname) throws FileNotFoundException, UnsupportedEncodingException, IOException {
@@ -109,51 +167,36 @@ public class WhiteHatIDDRecorder extends Recorder {
       throw new IllegalStateException("workspace does not yet exist for this job " + env.get("JOB_NAME"));
     }
 
-    String webAppPath = "";
-    Plugin plugin = Jenkins.get().getPlugin("directed-dast");
-    if (plugin != null) {
-      webAppPath = plugin.getWrapper().baseResourceURL.getFile();
-    }
-    listener.getLogger().println("webapp path " + webAppPath);
-
     int res = -1;
     try {
-      FilePath srcFilePath = new FilePath(new File(webAppPath, "settings.default.json"));
-      if (srcFilePath.exists()) {
-        listener.getLogger().println("default settings exists " + srcFilePath);
-      } else {
-        listener.getLogger().println("default settings does NOT exist " + srcFilePath);
-      }
+      String settingsPath = getSettingsPath(env, ws, listener);
 
-      FilePath destFilePath = ws.child("idd-settings-jenkins-job-" + env.get("JOB_NAME") + ".json");
-      if (destFilePath.exists() && destFilePath.length() > 0) {
-        listener.getLogger().println("settings file " + destFilePath);
-      } else {
-        listener.getLogger().println("copy settings " + srcFilePath + " to " + destFilePath);
-        destFilePath.copyFrom(srcFilePath);
-      }
-
-      listener.getLogger().println("read settings " + destFilePath);
-      Configuration config = readSettings(destFilePath.getRemote());
+      listener.getLogger().println("read settings " + settingsPath);
+      Configuration config = readSettings(settingsPath);
 
       // update settings
       config.setSeverityReportLevel(severityReportLevel);
       config.setSeverityFailLevel(severityFailLevel);
 
-      listener.getLogger().println("save settings " + destFilePath);
-      saveSettings(config, destFilePath.getRemote());
+      listener.getLogger().println("save settings " + settingsPath);
+      saveSettings(config, settingsPath);
+
+      String harSourcePath = getHarSourcePath(env, ws, listener);
 
       // on Windows environment variables are converted to all upper case,
       // but no such conversions are done on Unix, so to make this cross-platform,
       // convert variables to all upper cases.
-      for (Map.Entry<String,String> e : build.getBuildVariables().entrySet())
+      for (Map.Entry<String,String> e : build.getBuildVariables().entrySet()) {
         env.put(e.getKey(),e.getValue());
+      }
 
       listener.getLogger().println("env var " + IDD_HOME + " is " + env.get(IDD_HOME));
-      String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), destFilePath, harSource);
+      String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), settingsPath, harSourcePath);
 
       res = (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(ws).start()).join();
-      if (res == 0) build.setResult(Result.SUCCESS);
+      if (res == 0) {
+        build.setResult(Result.SUCCESS);
+      }
     } catch (IOException e) {
       Util.displayIOException(e, listener);
       Functions.printStackTrace(e, listener.fatalError(Messages.WhiteHatIDDRecorderBuilder_CommandFailed()));
