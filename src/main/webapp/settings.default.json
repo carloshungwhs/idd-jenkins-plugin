@@ -27,12 +27,13 @@
     "__VIEWSTATE"
   ],
   "allowedHosts": [],
-  "hosts": {
-    "localhost:27374": {
-      "substitute": "localhost:3000",
+  "hosts": [
+    {
+      "from": "localhost:27374",
+      "to": "localhost:3000",
       "enable": true
     }
-  },
+  ],
   "customHeaders": {},
   "customCookies": {},
   "proxyServer": "",

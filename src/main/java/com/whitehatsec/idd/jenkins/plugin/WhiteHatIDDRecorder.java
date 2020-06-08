@@ -2,7 +2,6 @@ package com.whitehatsec.idd.jenkins.plugin;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,8 +9,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -127,7 +128,7 @@ public class WhiteHatIDDRecorder extends Recorder {
     }
   }
 
-  private Configuration readSettings(String fname) throws FileNotFoundException, UnsupportedEncodingException, IOException {
+  private Configuration readSettings(String fname) throws IOException {
     Gson gson = new Gson();
 
     try {
@@ -138,9 +139,40 @@ public class WhiteHatIDDRecorder extends Recorder {
       destFileReader.close();
 
       return config;
-    } catch (Exception e) {
+    } catch (IOException e) {
       throw e;
     }
+  }
+
+  private Configuration updateHostMappingSettings(Configuration config) {
+    if (StringUtils.isNotBlank(fromHost) && StringUtils.isNotBlank(toHost)) {
+      List<HostMapping> hosts = config.getHosts();
+      if (hosts == null) {
+        hosts = new LinkedList<>();
+        HostMapping h = new HostMapping();
+
+        h.setFrom(fromHost);
+        h.setTo(toHost);
+        h.setEnable(false);
+        hosts.add(h);
+      } else {
+        LinkedHashMap<String, HostMapping> map = new LinkedHashMap<>();
+        for (HostMapping host : hosts) {
+          map.put(host.getFrom(), host);
+        }
+
+        HostMapping h = new HostMapping();
+        h.setFrom(fromHost);
+        h.setTo(toHost);
+        h.setEnable(true);
+        map.put(fromHost, h);
+
+        hosts = new LinkedList<HostMapping>(map.values());
+      }
+      config.setHosts(hosts);
+    }
+
+    return config;
   }
 
   private void saveSettings(Configuration config, String fname) throws IOException {
@@ -177,6 +209,8 @@ public class WhiteHatIDDRecorder extends Recorder {
       // update settings
       config.setSeverityReportLevel(severityReportLevel);
       config.setSeverityFailLevel(severityFailLevel);
+
+      config = updateHostMappingSettings(config);
 
       listener.getLogger().println("save settings " + settingsPath);
       saveSettings(config, settingsPath);

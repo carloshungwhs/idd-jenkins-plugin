@@ -14,6 +14,7 @@ public class Configuration {
   private boolean includeEvidence;
   private String severityReportLevel;
   private String severityFailLevel;
+  private List<HostMapping> hosts;
 
   public boolean isApplyDebugHeader() {
     return applyDebugHeader;
@@ -102,55 +103,12 @@ public class Configuration {
   public void setSeverityFailLevel(String severityFailLevel) {
     this.severityFailLevel = severityFailLevel;
   }
-}
 
-/*
-{
-  "applyDebugHeader": true,
-  "excludedUrls": [
-      "logout"
-  ],
-  "excludedAttackUrls": [
-      "/login"
-  ],
-  "excludedFileExtensions": [
-      "jpg",
-      "ico",
-      "png",
-      "gif",
-      "js",
-      "css",
-      "woff",
-      "ttf",
-      "woff2",
-      "jpeg",
-      "css",
-      "axd",
-      "svg"
-  ],
-  "excludedParameters": [
-      "jsessionid",
-      "__EVENTARGUMENT",
-      "__EVENTTARGET",
-      "__EVENTVALIDATION",
-      "__VIEWSTATE"
-  ],
-  "attackModules": [
-  ],
-  "disablePassiveModules": false,
-  "allowedHosts": [
-  ],    
-  "customHeaders": {        
-  },
-  "requestOptions": {        
-      "requestDelay": 0,
-      "retryCount": 1,
-      "timeout": 5000
-  },
-  "customCookies": {
-  },
-  "includeEvidence": true,
-  "severityReportLevel": "High",
-  "severityFailLevel": "Note"
+  public List<HostMapping> getHosts() {
+    return hosts;
+  }
+
+  public void setHosts(List<HostMapping> hosts) {
+    this.hosts = hosts;
+  }
 }
-*/
