@@ -1,5 +1,11 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="Workspace" field="workspaceLocation">
+    ${it.workspace}
+    <j:if test="${empty(it.workspace)}">
+      <p>Not created yet. Run a build to have Jenkins create a workspace.</p>
+    </j:if>
+  </f:entry>
   <f:entry title="${%HARSource}" field="harSource">
     <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
   </f:entry>

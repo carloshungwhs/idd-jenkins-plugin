@@ -199,6 +199,10 @@ public class WhiteHatIDDRecorder extends Recorder {
       throw new IllegalStateException("workspace does not yet exist for this job " + env.get("JOB_NAME"));
     }
 
+    if (StringUtils.isBlank(env.get(IDD_HOME))) {
+      throw new InterruptedException("required " + IDD_HOME + " env variable is not set yet");
+    }
+
     int res = -1;
     try {
       String settingsPath = getSettingsPath(env, ws, listener);
