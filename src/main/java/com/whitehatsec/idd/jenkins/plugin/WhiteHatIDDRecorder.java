@@ -47,6 +47,7 @@ public class WhiteHatIDDRecorder extends Recorder {
   private String harSource;
   private String severityReportLevel;
   private String severityFailLevel;
+  private Boolean enableHostMap;
   private String fromHost;
   private String toHost;
 
@@ -54,10 +55,11 @@ public class WhiteHatIDDRecorder extends Recorder {
 
   // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel, String fromHost, String toHost) {
+  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel, Boolean enableHostMap, String fromHost, String toHost) {
     this.harSource = harSource;
     this.severityReportLevel = severityReportLevel;
     this.severityFailLevel = severityFailLevel;
+    this.enableHostMap = enableHostMap;
     this.fromHost = fromHost;
     this.toHost = toHost;
   }
@@ -72,6 +74,10 @@ public class WhiteHatIDDRecorder extends Recorder {
 
   public String getSeverityFailLevel() {
     return severityFailLevel;
+  }
+
+  public Boolean getEnableHostMap() {
+    return enableHostMap;
   }
 
   public String getFromHost() {
@@ -151,9 +157,9 @@ public class WhiteHatIDDRecorder extends Recorder {
         hosts = new LinkedList<>();
         HostMapping h = new HostMapping();
 
+        h.setEnable(enableHostMap);
         h.setFrom(fromHost);
         h.setTo(toHost);
-        h.setEnable(false);
         hosts.add(h);
       } else {
         LinkedHashMap<String, HostMapping> map = new LinkedHashMap<>();
@@ -162,9 +168,9 @@ public class WhiteHatIDDRecorder extends Recorder {
         }
 
         HostMapping h = new HostMapping();
+        h.setEnable(enableHostMap);
         h.setFrom(fromHost);
         h.setTo(toHost);
-        h.setEnable(true);
         map.put(fromHost, h);
 
         hosts = new LinkedList<HostMapping>(map.values());

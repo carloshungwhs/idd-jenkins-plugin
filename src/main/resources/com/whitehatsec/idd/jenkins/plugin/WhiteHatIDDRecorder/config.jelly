@@ -1,10 +1,10 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:entry title="Workspace" field="workspaceLocation">
-    ${it.workspace}
-    <j:if test="${empty(it.workspace)}">
-      <p>Not created yet. Run a build to have Jenkins create a workspace.</p>
-    </j:if>
+    <j:choose>
+     <j:when test="${empty(it.workspace)}">Not created yet. Run a build to have Jenkins create a workspace.</j:when>
+     <j:otherwise>${it.workspace}</j:otherwise>
+    </j:choose>
   </f:entry>
   <f:entry title="${%HARSource}" field="harSource">
     <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
@@ -20,16 +20,29 @@
       <f:entry field="mapHost">
         <table width="100%">
           <tr>
+            <th>Enable</th>
             <th>Current Host</th>
             <th>New Host</th>
           </tr>
           <tr>
+            <td><f:checkbox field="enableHostMap"></f:checkbox></td>
             <td><f:textbox field="fromHost" placeholder="${descriptor.getFromHost()}"/></td>
             <td><f:textbox field="toHost" placeholder="${descriptor.getToHost()}"/></td>
           </tr>
         </table>
       </f:entry>
     </f:block>
+  </f:section>
+  <f:section title="Advanced Project Configuration">
+    <f:advanced>
+      <f:block>
+        <f:entry field="advanced">
+          <p>Edit <i>idd-settings-jenkins-job-<b>job_name</b>.json</i> found in workspace dir.
+          <br></br>Then run <i>directed-dast-common -settings-file idd-settings-jenkins-job-<b>job_name</b>.json</i></p> 
+          <p><u>Note</u>: <b>job_name</b> implies this <i>project name</i></p>
+        </f:entry>
+      </f:block>
+    </f:advanced>
   </f:section>
 
 <!--
