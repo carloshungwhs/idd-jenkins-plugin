@@ -1,8 +1,8 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:entry title="Workspace" field="workspaceLocation">
+  <f:entry title="${%Workspace}" field="workspaceLocation">
     <j:choose>
-     <j:when test="${empty(it.workspace)}">Not created yet. Run a build to have Jenkins create a workspace.</j:when>
+     <j:when test="${empty(it.workspace)}">${%WorkspaceNotCreatedYet}</j:when>
      <j:otherwise>${it.workspace}</j:otherwise>
     </j:choose>
   </f:entry>
@@ -15,115 +15,20 @@
   <f:entry title="${%SeverityFailLevel}" field="severityFailLevel">
     <f:select default="${descriptor.defaultSeverityFailLevel()}"/>
   </f:entry>
-  <f:section title="Host URL Mapping">
+  <f:section title="${%HostUrlMapping}">
     <f:block>
-      <f:entry field="mapHost">
-        <table width="100%">
-          <tr>
-            <th>Enable</th>
-            <th>Current Host</th>
-            <th>New Host</th>
-          </tr>
-          <tr>
-            <td><f:checkbox field="enableHostMap"></f:checkbox></td>
-            <td><f:textbox field="fromHost" placeholder="${descriptor.getFromHost()}"/></td>
-            <td><f:textbox field="toHost" placeholder="${descriptor.getToHost()}"/></td>
-          </tr>
-        </table>
-      </f:entry>
+      <f:repeatableProperty field="hostMapping" add="${%Add}"/>
     </f:block>
   </f:section>
-  <f:section title="Advanced Project Configuration">
-    <f:advanced>
+  <f:section title="${%AdvancedProjConfig}">
+    <f:advanced title="${%Advanced}">
       <f:block>
         <f:entry field="advanced">
-          <p>Edit <i>idd-settings-jenkins-job-<b>job_name</b>.json</i> found in workspace dir.
-          <br></br>Then run <i>directed-dast-common -settings-file idd-settings-jenkins-job-<b>job_name</b>.json</i></p> 
-          <p><u>Note</u>: <b>job_name</b> implies this <i>project name</i></p>
+          ${%AdvancedProjConfigMessage1}
+          ${%AdvancedProjConfigMessage2}
+          ${%AdvancedProjConfigMessage3}
         </f:entry>
       </f:block>
     </f:advanced>
   </f:section>
-
-<!--
-      <f:entry help="/descriptor/org.jenkinsci.plugins.zap.ZAPCmdLine/help/config">
-      <f:repeatableProperty field="cmdLinesZAP" add="${%jenkins.jobconfig.zap.config.cmdlineargs.addargs.button}" />
-  <f:entry help="/descriptor/org.jenkinsci.plugins.zap.ZAPCmdLine/help/config">
-  <table width="100%">
-    <tr>
-      <th>${%jenkins.jobconfig.zap.config.cmdlineargs.optionarg.textbox.label}</th>
-      <th>${%jenkins.jobconfig.zap.config.cmdlineargs.valuearg.textbox.label}</th>
-    </tr>
-    <tr>
-      <td><f:textbox field="cmdLineOption"/></td>
-      <td><f:textbox field="cmdLineValue"/></td>
-    </tr>
-    <tr>
-      <td colspan="2" align="right"><f:repeatableDeleteButton value="${%Delete}"/></td>
-    </tr>
-  </table>
-  </f:entry>
--->
-
-<!--
-  <f:optionalBlock title="${%OverrideGlobalConfig}" name ="useLocalConfig"
-		  inline="true" field="useLocalConfig"
-		  checked="${instance==null?false:instance.useLocalConfig}">
-    <f:section title="${%ConfigOverride}">
-      <f:entry title="${%HARSource}" field="harSource" description="${%HARSourceDesc}">
-        <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
-      </f:entry>
-      <f:entry title="${%SeverityReportLevel}" field="severityReportLevel">
-        <f:select default="${descriptor.defaultSeverityReportLevel()}"/>
-      </f:entry>
-      <f:entry title="${%SeverityFailLevel}" field="severityFailLevel">
-        <f:select default="${descriptor.defaultSeverityFailLevel()}"/>
-      </f:entry>
-    </f:section>
-  </f:optionalBlock>
--->
 </j:jelly>
-
-<!--
-  <f:optionalBlock title="Override global credentials" name ="uselocalCredentials"
-      inline="true" field="uselocalCredentials"
-      checked="${instance==null?false:instance.uselocalCredentials}"
-      help="/plugin/WhiteHat_Sentinel_Jenkins_Plugin/overrideGlobal.html">
-
-    <f:entry title="Sentinel server" field="sentinelURL" help="/plugin/WhiteHat_Sentinel_Jenkins_Plugin/sentinelURL.html">
-      <f:textbox default="https://sentinel.whitehatsec.com" id="url"/>
-      </f:entry>
-      <f:entry title="API key" help="/plugin/WhiteHat_Sentinel_Jenkins_Plugin/apiKey.html">
-      <f:password  field="apiKey"/>
-      </f:entry>
-      <f:validateButton
-      title="${%Test Connection}" progress="${%Testing...}"
-      method="validateConnection" with="apiKey,sentinelURL" />
-  </f:optionalBlock>
--->
-
-<!--
-<?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:entry title="API ID" field="apiId">
-    <f:textbox default="${instance.getAPIId()}"/>
-  </f:entry>
-
-  <f:advanced>
-    <f:section title="Connection Overrides">
-      <f:entry title="${%Credentials}" field="credentialId">
-        <c:select/>
-      </f:entry>
-      <f:entry title="API Scanner URL" field="apiHost">
-        <f:textbox value="${instance.getAPIHost()}" placeholder="${descriptor.getAPIHost()}"/>
-      </f:entry>
-      <f:entry title="Proxy Host" field="proxyHost">
-        <f:textbox value="${instance.getProxyHost()}" placeholder="${descriptor.getProxyHost()}"/>
-      </f:entry>
-      <f:entry title="Proxy Port" field="proxyPort">
-        <f:textbox value="${instance.getProxyPort()}" placeholder="${descriptor.getProxyPort()}"/>
-      </f:entry>
-    </f:section>
-  </f:advanced>
-</j:jelly>
--->

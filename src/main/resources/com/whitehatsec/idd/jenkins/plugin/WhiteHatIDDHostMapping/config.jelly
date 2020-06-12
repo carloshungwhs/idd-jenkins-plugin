@@ -1,0 +1,20 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry field="hostMapping">
+    <table width="100%">
+      <tr>
+        <th>Enable</th>
+        <th>Current Host</th>
+        <th>New Host</th>
+      </tr>
+      <tr>
+        <td class="center"><f:checkbox field="enableHostMapping"></f:checkbox></td>
+        <td><f:textbox field="fromHost"/></td>
+        <td><f:textbox field="toHost"/></td>
+      </tr>
+      <tr>
+        <td colspan="3" align="right"><f:repeatableDeleteButton value="${%Delete}"/></td>
+      </tr>
+    </table>
+  </f:entry>
+</j:jelly>

@@ -65,28 +65,6 @@
             <artifactId>workflow-durable-task-step</artifactId>
             <scope>test</scope>
         </dependency>
-    <!--
-      <dependency>
-        <groupId>org.kohsuke.stapler</groupId>
-        <artifactId>stapler</artifactId>
-        <version>1.106</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.jvnet.hudson.main</groupId>
-        <artifactId>hudson-core</artifactId>
-        <version>1.109</version>
-      </dependency>
-    -->
-
-    <!--
-      <dependency>
-        <groupId>org.jvnet.hudson.main</groupId>
-        <artifactId>hudson-core</artifactId>
-        <version>1.160</version>
-      </dependency>
-    -->
-    
     <dependency>
       <groupId>com.google.code.gson</groupId>
         <artifactId>gson</artifactId>

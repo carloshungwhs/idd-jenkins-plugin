@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,21 +48,17 @@ public class WhiteHatIDDRecorder extends Recorder {
   private String harSource;
   private String severityReportLevel;
   private String severityFailLevel;
-  private Boolean enableHostMap;
-  private String fromHost;
-  private String toHost;
+  private ArrayList<WhiteHatIDDHostMapping> hostMapping;
 
   private static final String IDD_HOME = "DIRECTED_DAST_HOME";
 
   // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel, Boolean enableHostMap, String fromHost, String toHost) {
+  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel, List<WhiteHatIDDHostMapping> hostMapping) {
     this.harSource = harSource;
     this.severityReportLevel = severityReportLevel;
     this.severityFailLevel = severityFailLevel;
-    this.enableHostMap = enableHostMap;
-    this.fromHost = fromHost;
-    this.toHost = toHost;
+    this.hostMapping = hostMapping != null ? new ArrayList<WhiteHatIDDHostMapping>(hostMapping) : new ArrayList<WhiteHatIDDHostMapping>();
   }
 
   public String getHarSource() {
@@ -76,16 +73,8 @@ public class WhiteHatIDDRecorder extends Recorder {
     return severityFailLevel;
   }
 
-  public Boolean getEnableHostMap() {
-    return enableHostMap;
-  }
-
-  public String getFromHost() {
-    return fromHost;
-  }
-
-  public String getToHost() {
-    return toHost;
+  public ArrayList<WhiteHatIDDHostMapping> getHostMapping() {
+    return hostMapping;
   }
 
   private String getSettingsPath(EnvVars env, FilePath ws, BuildListener listener) throws IOException, InterruptedException {
@@ -151,32 +140,22 @@ public class WhiteHatIDDRecorder extends Recorder {
   }
 
   private Configuration updateHostMappingSettings(Configuration config) {
-    if (StringUtils.isNotBlank(fromHost) && StringUtils.isNotBlank(toHost)) {
-      List<HostMapping> hosts = config.getHosts();
-      if (hosts == null) {
-        hosts = new LinkedList<>();
-        HostMapping h = new HostMapping();
+    HostMapping h = new HostMapping();
+    LinkedHashMap<String, HostMapping> map = new LinkedHashMap<>();
 
-        h.setEnable(enableHostMap);
-        h.setFrom(fromHost);
-        h.setTo(toHost);
-        hosts.add(h);
-      } else {
-        LinkedHashMap<String, HostMapping> map = new LinkedHashMap<>();
-        for (HostMapping host : hosts) {
-          map.put(host.getFrom(), host);
-        }
-
-        HostMapping h = new HostMapping();
-        h.setEnable(enableHostMap);
-        h.setFrom(fromHost);
-        h.setTo(toHost);
-        map.put(fromHost, h);
-
-        hosts = new LinkedList<HostMapping>(map.values());
+    for (WhiteHatIDDHostMapping hm: hostMapping) {
+      if (StringUtils.isBlank(hm.getFromHost()) || StringUtils.isBlank(hm.getToHost())) {
+        continue;
       }
-      config.setHosts(hosts);
+      h.setEnable(hm.getEnableHostMapping());
+      h.setFrom(hm.getFromHost());
+      h.setTo(hm.getToHost());
+      map.put(hm.getFromHost(), h);
     }
+    config.setHosts(new LinkedList<HostMapping>(map.values()));
+
+    config.setSeverityReportLevel(severityReportLevel);
+    config.setSeverityFailLevel(severityFailLevel);
 
     return config;
   }
@@ -206,7 +185,7 @@ public class WhiteHatIDDRecorder extends Recorder {
     }
 
     if (StringUtils.isBlank(env.get(IDD_HOME))) {
-      throw new InterruptedException("required " + IDD_HOME + " env variable is not set yet");
+      throw new InterruptedException("required env variable is not set yet: " + IDD_HOME);
     }
 
     int res = -1;
@@ -215,10 +194,6 @@ public class WhiteHatIDDRecorder extends Recorder {
 
       listener.getLogger().println("read settings " + settingsPath);
       Configuration config = readSettings(settingsPath);
-
-      // update settings
-      config.setSeverityReportLevel(severityReportLevel);
-      config.setSeverityFailLevel(severityFailLevel);
 
       config = updateHostMappingSettings(config);
 
@@ -243,9 +218,9 @@ public class WhiteHatIDDRecorder extends Recorder {
       }
     } catch (IOException e) {
       Util.displayIOException(e, listener);
-      Functions.printStackTrace(e, listener.fatalError(Messages.WhiteHatIDDRecorderBuilder_CommandFailed()));
+      Functions.printStackTrace(e, listener.fatalError("command execution failed"));
     } catch (InterruptedException e) {
-      Functions.printStackTrace(e, listener.fatalError(Messages.WhiteHatIDDRecorderBuilder_JobInterrupted()));
+      Functions.printStackTrace(e, listener.fatalError("job interrupted"));
     }
     return res == 0;
   }
