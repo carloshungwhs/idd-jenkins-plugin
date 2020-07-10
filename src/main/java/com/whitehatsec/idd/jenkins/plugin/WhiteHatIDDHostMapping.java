@@ -2,13 +2,15 @@ package com.whitehatsec.idd.jenkins.plugin;
 
 import java.io.Serializable;
 
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.Extension;
+import hudson.ExtensionPoint;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 
-public class WhiteHatIDDHostMapping  extends AbstractDescribableImpl<WhiteHatIDDHostMapping> implements Serializable {
+public class WhiteHatIDDHostMapping  extends AbstractDescribableImpl<WhiteHatIDDHostMapping> implements Serializable, ExtensionPoint {
   private static final long serialVersionUID = 1L;
 
   private Boolean enableHostMapping;
@@ -34,6 +36,7 @@ public class WhiteHatIDDHostMapping  extends AbstractDescribableImpl<WhiteHatIDD
     return toHost;
   }
 
+  @Symbol("whsIddHost")
   @Extension
   public static class WhiteHatIDDHostMappingDescriptorImpl extends Descriptor<WhiteHatIDDHostMapping> {
     @Override

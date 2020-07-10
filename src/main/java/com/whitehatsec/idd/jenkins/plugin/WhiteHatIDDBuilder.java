@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.ServletException;
 
@@ -24,6 +23,7 @@ import com.google.gson.GsonBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import hudson.EnvVars;
@@ -33,18 +33,17 @@ import hudson.Functions;
 import hudson.Launcher;
 import hudson.Plugin;
 import hudson.Util;
-import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.Publisher;
-import hudson.tasks.Recorder;
+import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
+import jenkins.tasks.SimpleBuildStep;
 
-public class WhiteHatIDDRecorder extends Recorder {
+public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   private String harSource;
   private String severityReportLevel;
   private String severityFailLevel;
@@ -54,7 +53,7 @@ public class WhiteHatIDDRecorder extends Recorder {
 
   // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDRecorder(String harSource, String severityReportLevel, String severityFailLevel, List<WhiteHatIDDHostMapping> hostMapping) {
+  public WhiteHatIDDBuilder(String harSource, String severityReportLevel, String severityFailLevel, List<WhiteHatIDDHostMapping> hostMapping) {
     this.harSource = harSource;
     this.severityReportLevel = severityReportLevel;
     this.severityFailLevel = severityFailLevel;
@@ -77,7 +76,24 @@ public class WhiteHatIDDRecorder extends Recorder {
     return hostMapping;
   }
 
-  private String getSettingsPath(EnvVars env, FilePath ws, BuildListener listener) throws IOException, InterruptedException {
+  @DataBoundSetter
+  public void setHarSource(String harSource) {
+    this.harSource = harSource;
+  }
+
+  public void setSeverityReportLevel(String severityReportLevel) {
+    this.severityReportLevel = severityReportLevel;
+  }
+
+  public void setSeverityFailLevel(String severityFailLevel) {
+    this.severityFailLevel = severityFailLevel;
+  }
+
+  public void setHostMapping(ArrayList<WhiteHatIDDHostMapping> hostMapping) {
+    this.hostMapping = hostMapping;
+  }
+
+  private String getSettingsPath(EnvVars env, FilePath ws, TaskListener listener) throws IOException, InterruptedException {
     String webAppPath = "";
     Plugin plugin = Jenkins.get().getPlugin("directed-dast");
     if (plugin != null) {
@@ -106,7 +122,7 @@ public class WhiteHatIDDRecorder extends Recorder {
     }
   }
 
-  private String getHarSourcePath(EnvVars env, FilePath ws, BuildListener listener) throws IOException, InterruptedException {
+  private String getHarSourcePath(EnvVars env, FilePath ws, TaskListener listener) throws IOException, InterruptedException {
     try {
       File file = new File(harSource);
       if (file.isAbsolute()) {
@@ -140,13 +156,13 @@ public class WhiteHatIDDRecorder extends Recorder {
   }
 
   private Configuration updateHostMappingSettings(Configuration config) {
-    HostMapping h = new HostMapping();
     LinkedHashMap<String, HostMapping> map = new LinkedHashMap<>();
 
     for (WhiteHatIDDHostMapping hm: hostMapping) {
       if (StringUtils.isBlank(hm.getFromHost()) || StringUtils.isBlank(hm.getToHost())) {
         continue;
       }
+      HostMapping h = new HostMapping();
       h.setEnable(hm.getEnableHostMapping());
       h.setFrom(hm.getFromHost());
       h.setTo(hm.getToHost());
@@ -175,12 +191,11 @@ public class WhiteHatIDDRecorder extends Recorder {
   }
 
   @Override
-  public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
+  public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) 
       throws InterruptedException, IOException {
 
-    EnvVars env = build.getEnvironment(listener);
-    FilePath ws = build.getWorkspace();
-    if (ws == null) {
+    EnvVars env = run.getEnvironment(listener);
+    if (workspace == null) {
       throw new IllegalStateException("workspace does not yet exist for this job " + env.get("JOB_NAME"));
     }
 
@@ -188,9 +203,8 @@ public class WhiteHatIDDRecorder extends Recorder {
       throw new InterruptedException("required env variable is not set yet: " + IDD_HOME);
     }
 
-    int res = -1;
     try {
-      String settingsPath = getSettingsPath(env, ws, listener);
+      String settingsPath = getSettingsPath(env, workspace, listener);
 
       listener.getLogger().println("read settings " + settingsPath);
       Configuration config = readSettings(settingsPath);
@@ -200,51 +214,32 @@ public class WhiteHatIDDRecorder extends Recorder {
       listener.getLogger().println("save settings " + settingsPath);
       saveSettings(config, settingsPath);
 
-      String harSourcePath = getHarSourcePath(env, ws, listener);
-
-      // on Windows environment variables are converted to all upper case,
-      // but no such conversions are done on Unix, so to make this cross-platform,
-      // convert variables to all upper cases.
-      for (Map.Entry<String,String> e : build.getBuildVariables().entrySet()) {
-        env.put(e.getKey(),e.getValue());
-      }
+      String harSourcePath = getHarSourcePath(env, workspace, listener);
 
       listener.getLogger().println("env var " + IDD_HOME + " is " + env.get(IDD_HOME));
       String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), settingsPath, harSourcePath);
 
-      res = (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(ws).start()).join();
-      if (res == 0) {
-        build.setResult(Result.SUCCESS);
-      }
+      (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(workspace).start()).join();
     } catch (IOException e) {
       Util.displayIOException(e, listener);
       Functions.printStackTrace(e, listener.fatalError("command execution failed"));
     } catch (InterruptedException e) {
       Functions.printStackTrace(e, listener.fatalError("job interrupted"));
     }
-    return res == 0;
   }
 
-  @Override
-	public DescriptorImpl getDescriptor() {
-		return (DescriptorImpl) super.getDescriptor();
-  }
-
-  @Symbol("idd")
+  @Symbol("whsIdd")
   @Extension
-  public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-    public DescriptorImpl() {
-      load();
-    }
+  public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
     @Override
-    public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+    public boolean isApplicable(Class<? extends AbstractProject> aClass) {
       return true;
     }
 
     @Override
     public String getDisplayName() {
-      return Messages.WhiteHatIDDRecorderBuilder_DescriptorImpl_DisplayName();
+      return Messages.WhiteHatIDDBuilder_DescriptorImpl_DisplayName();
     }
 
     public String defaultSeverityReportLevel() {
@@ -257,7 +252,7 @@ public class WhiteHatIDDRecorder extends Recorder {
 
     public FormValidation doCheckHarSource(@QueryParameter String value) throws IOException, ServletException {
       if (StringUtils.isBlank(value)) {
-        return FormValidation.error(Messages.WhiteHatIDDRecorderBuilder_DescriptionImpl_errors_requiredHarSource());
+        return FormValidation.error(Messages.WhiteHatIDDBuilder_DescriptionImpl_errors_requiredHarSource());
       }
       return FormValidation.ok();
     }
