@@ -45,18 +45,18 @@ import jenkins.tasks.SimpleBuildStep;
 
 public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   private String harSource;
-  private String severityReportLevel;
-  private String severityFailLevel;
+  private String filterOnSeverity;
+  private String failOnSeverity;
   private ArrayList<WhiteHatIDDHostMapping> hostMapping;
 
   private static final String IDD_HOME = "DIRECTED_DAST_HOME";
 
   // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDBuilder(String harSource, String severityReportLevel, String severityFailLevel, List<WhiteHatIDDHostMapping> hostMapping) {
+  public WhiteHatIDDBuilder(String harSource, String filterOnSeverity, String failOnSeverity, List<WhiteHatIDDHostMapping> hostMapping) {
     this.harSource = harSource;
-    this.severityReportLevel = severityReportLevel;
-    this.severityFailLevel = severityFailLevel;
+    this.filterOnSeverity = filterOnSeverity;
+    this.failOnSeverity = failOnSeverity;
     this.hostMapping = hostMapping != null ? new ArrayList<WhiteHatIDDHostMapping>(hostMapping) : new ArrayList<WhiteHatIDDHostMapping>();
   }
 
@@ -64,12 +64,12 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
     return harSource;
   }
 
-  public String getSeverityReportLevel() {
-    return severityReportLevel;
+  public String getFilterOnSeverity() {
+    return filterOnSeverity;
   }
 
-  public String getSeverityFailLevel() {
-    return severityFailLevel;
+  public String getFailOnSeverity() {
+    return failOnSeverity;
   }
 
   public ArrayList<WhiteHatIDDHostMapping> getHostMapping() {
@@ -81,12 +81,12 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
     this.harSource = harSource;
   }
 
-  public void setSeverityReportLevel(String severityReportLevel) {
-    this.severityReportLevel = severityReportLevel;
+  public void setFilterOnSeverity(String filterOnSeverity) {
+    this.filterOnSeverity = filterOnSeverity;
   }
 
-  public void setSeverityFailLevel(String severityFailLevel) {
-    this.severityFailLevel = severityFailLevel;
+  public void setFailOnSeverity(String failOnSeverity) {
+    this.failOnSeverity = failOnSeverity;
   }
 
   public void setHostMapping(ArrayList<WhiteHatIDDHostMapping> hostMapping) {
@@ -170,8 +170,8 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
     }
     config.setHosts(new LinkedList<HostMapping>(map.values()));
 
-    config.setSeverityReportLevel(severityReportLevel);
-    config.setSeverityFailLevel(severityFailLevel);
+    config.setFilterOnSeverity(filterOnSeverity);
+    config.setFailOnSeverity(failOnSeverity);
 
     return config;
   }
@@ -242,11 +242,11 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
       return Messages.WhiteHatIDDBuilder_DescriptorImpl_DisplayName();
     }
 
-    public String defaultSeverityReportLevel() {
+    public String defaultFilterOnSeverity() {
       return Severity.HIGH.level;
     }
 
-    public String defaultSeverityFailLevel() {
+    public String defaultFailOnSeverity() {
       return Severity.NOTE.level;
     }
 
@@ -257,11 +257,11 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
       return FormValidation.ok();
     }
 
-    public ListBoxModel doFillSeverityReportLevelItems() {
+    public ListBoxModel doFillFilterOnSeverityItems() {
       return fillSeverityItems();
     }
 
-    public ListBoxModel doFillSeverityFailLevelItems() {
+    public ListBoxModel doFillFailOnSeverityItems() {
       return fillSeverityItems();
     }
 

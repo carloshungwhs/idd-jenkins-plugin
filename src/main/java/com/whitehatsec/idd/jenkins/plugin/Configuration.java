@@ -12,8 +12,8 @@ public class Configuration {
   private boolean disablePassiveModules;
   private List<String> allowedHosts;
   private boolean includeEvidence;
-  private String severityReportLevel;
-  private String severityFailLevel;
+  private String filterOnSeverity;
+  private String failOnSeverity;
   private List<HostMapping> hosts;
 
   public boolean isApplyDebugHeader() {
@@ -88,20 +88,20 @@ public class Configuration {
     this.includeEvidence = includeEvidence;
   }
 
-  public String getSeverityReportLevel() {
-    return severityReportLevel;
+  public String getFilterOnSeverity() {
+    return filterOnSeverity;
   }
 
-  public void setSeverityReportLevel(String severityReportLevel) {
-    this.severityReportLevel = severityReportLevel;
+  public void setFilterOnSeverity(String filterOnSeverity) {
+    this.filterOnSeverity = filterOnSeverity;
   }
 
-  public String getSeverityFailLevel() {
-    return severityFailLevel;
+  public String getFailOnSeverity() {
+    return failOnSeverity;
   }
 
-  public void setSeverityFailLevel(String severityFailLevel) {
-    this.severityFailLevel = severityFailLevel;
+  public void setFailOnSeverity(String failOnSeverity) {
+    this.failOnSeverity = failOnSeverity;
   }
 
   public List<HostMapping> getHosts() {

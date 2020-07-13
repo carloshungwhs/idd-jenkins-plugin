@@ -45,6 +45,6 @@
   "attackModules": [],
   "disablePassiveModules": false,
   "includeEvidence": true,
-  "severityReportLevel": "High",
-  "severityFailLevel": "Note"
+  "filterOnSeverity": "High",
+  "failOnSeverity": "Note"
 }
