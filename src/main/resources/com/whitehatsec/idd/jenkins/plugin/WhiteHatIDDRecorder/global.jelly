@@ -1,8 +1,0 @@
-<?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-  <f:section title="WhiteHat Security Intelligent Directed DAST">
-    <f:entry title="${%HARSource}" field="harSource" description="${%HARSourceDesc}">
-      <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
-    </f:entry>
-  </f:section>
-</j:jelly>

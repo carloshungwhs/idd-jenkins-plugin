@@ -1,0 +1,34 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="${%Workspace}" field="workspaceLocation">
+    <j:choose>
+     <j:when test="${empty(it.workspace)}">${%WorkspaceNotCreatedYet}</j:when>
+     <j:otherwise>${it.workspace}</j:otherwise>
+    </j:choose>
+  </f:entry>
+  <f:entry title="${%HARSource}" field="harSource">
+    <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
+  </f:entry>
+  <f:entry title="${%FilterOnSeverity}" field="filterOnSeverity">
+    <f:select default="${descriptor.defaultFilterOnSeverity()}"/>
+  </f:entry>
+  <f:entry title="${%FailOnSeverity}" field="failOnSeverity">
+    <f:select default="${descriptor.defaultFailOnSeverity()}"/>
+  </f:entry>
+  <f:section title="${%HostUrlMapping}">
+    <f:block>
+      <f:repeatableProperty field="hostMapping" add="${%Add}"/>
+    </f:block>
+  </f:section>
+  <f:section title="${%AdvancedProjConfig}">
+    <f:advanced title="${%Advanced}">
+      <f:block>
+        <f:entry field="advanced">
+          ${%AdvancedProjConfigMessage1}
+          ${%AdvancedProjConfigMessage2}
+          ${%AdvancedProjConfigMessage3}
+        </f:entry>
+      </f:block>
+    </f:advanced>
+  </f:section>
+</j:jelly>
