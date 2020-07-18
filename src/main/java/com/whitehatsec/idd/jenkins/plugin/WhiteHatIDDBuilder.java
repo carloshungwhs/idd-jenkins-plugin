@@ -13,7 +13,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
 
 import javax.servlet.ServletException;
 
@@ -21,6 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -45,19 +45,16 @@ import jenkins.tasks.SimpleBuildStep;
 
 public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   private String harSource;
-  private String filterOnSeverity;
-  private String failOnSeverity;
+  private String filterOnSeverity = DescriptorImpl.defaultFilterOnSeverity;
+  private String failOnSeverity = DescriptorImpl.defaultFailOnSeverity;
   private ArrayList<WhiteHatIDDHostMapping> hostMapping;
 
   private static final String IDD_HOME = "DIRECTED_DAST_HOME";
 
-  // call on save job config
   @DataBoundConstructor
-  public WhiteHatIDDBuilder(String harSource, String filterOnSeverity, String failOnSeverity, List<WhiteHatIDDHostMapping> hostMapping) {
+  public WhiteHatIDDBuilder(String harSource) {
     this.harSource = harSource;
-    this.filterOnSeverity = filterOnSeverity;
-    this.failOnSeverity = failOnSeverity;
-    this.hostMapping = hostMapping != null ? new ArrayList<WhiteHatIDDHostMapping>(hostMapping) : new ArrayList<WhiteHatIDDHostMapping>();
+    this.hostMapping = new ArrayList<WhiteHatIDDHostMapping>();
   }
 
   public String getHarSource() {
@@ -65,32 +62,31 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   }
 
   public String getFilterOnSeverity() {
-    return filterOnSeverity;
+    return filterOnSeverity == null ? DescriptorImpl.defaultFilterOnSeverity : filterOnSeverity;
   }
 
   public String getFailOnSeverity() {
-    return failOnSeverity;
+    return failOnSeverity == null ? DescriptorImpl.defaultFailOnSeverity : failOnSeverity;
   }
 
   public ArrayList<WhiteHatIDDHostMapping> getHostMapping() {
-    return hostMapping;
+    return hostMapping == null ? new ArrayList<WhiteHatIDDHostMapping>() : hostMapping;
   }
 
   @DataBoundSetter
-  public void setHarSource(String harSource) {
-    this.harSource = harSource;
-  }
-
   public void setFilterOnSeverity(String filterOnSeverity) {
-    this.filterOnSeverity = filterOnSeverity;
+    this.filterOnSeverity = EnumUtils.isValidEnum(Severity.class, filterOnSeverity) ? filterOnSeverity : DescriptorImpl.defaultFilterOnSeverity;
   }
 
+  @DataBoundSetter
   public void setFailOnSeverity(String failOnSeverity) {
     this.failOnSeverity = failOnSeverity;
+    this.failOnSeverity = EnumUtils.isValidEnum(Severity.class, failOnSeverity) ? failOnSeverity : DescriptorImpl.defaultFailOnSeverity;
   }
 
+  @DataBoundSetter
   public void setHostMapping(ArrayList<WhiteHatIDDHostMapping> hostMapping) {
-    this.hostMapping = hostMapping;
+    this.hostMapping = hostMapping != null ? new ArrayList<WhiteHatIDDHostMapping>(hostMapping) : new ArrayList<WhiteHatIDDHostMapping>();
   }
 
   private String getSettingsPath(EnvVars env, FilePath ws, TaskListener listener) throws IOException, InterruptedException {
@@ -183,7 +179,7 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
       OutputStream fileStream = new FileOutputStream(fname);
       Writer writer = new OutputStreamWriter(fileStream, "UTF-8");
 
-      gson.toJson(config, writer); 
+      gson.toJson(config, writer);
       writer.close();
     } catch (IOException e) {
       throw e;
@@ -191,7 +187,7 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   }
 
   @Override
-  public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) 
+  public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
       throws InterruptedException, IOException {
 
     EnvVars env = run.getEnvironment(listener);
@@ -231,6 +227,8 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   @Symbol("whsIdd")
   @Extension
   public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    public static final String defaultFilterOnSeverity = Severity.HIGH.level;
+    public static final String defaultFailOnSeverity = Severity.NOTE.level;
 
     @Override
     public boolean isApplicable(Class<? extends AbstractProject> aClass) {
@@ -240,14 +238,6 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
     @Override
     public String getDisplayName() {
       return Messages.WhiteHatIDDBuilder_DescriptorImpl_DisplayName();
-    }
-
-    public String defaultFilterOnSeverity() {
-      return Severity.HIGH.level;
-    }
-
-    public String defaultFailOnSeverity() {
-      return Severity.NOTE.level;
     }
 
     public FormValidation doCheckHarSource(@QueryParameter String value) throws IOException, ServletException {
