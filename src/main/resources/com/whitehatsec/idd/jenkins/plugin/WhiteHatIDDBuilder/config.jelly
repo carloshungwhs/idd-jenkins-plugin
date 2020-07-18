@@ -10,10 +10,10 @@
     <f:textbox value="${instance.getHarSource()}" placeholder="${descriptor.getHarSource()}"/>
   </f:entry>
   <f:entry title="${%FilterOnSeverity}" field="filterOnSeverity">
-    <f:select default="${descriptor.defaultFilterOnSeverity()}"/>
+    <f:select default="${descriptor.defaultFilterOnSeverity}"/>
   </f:entry>
   <f:entry title="${%FailOnSeverity}" field="failOnSeverity">
-    <f:select default="${descriptor.defaultFailOnSeverity()}"/>
+    <f:select default="${descriptor.defaultFailOnSeverity}"/>
   </f:entry>
   <f:section title="${%HostUrlMapping}">
     <f:block>
