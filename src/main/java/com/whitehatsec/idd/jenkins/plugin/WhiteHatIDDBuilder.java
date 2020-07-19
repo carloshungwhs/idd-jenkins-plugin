@@ -194,7 +194,7 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   private void invokeIDD(String settingsPath, String harSourcePath, EnvVars env, FilePath workspace, Launcher launcher, TaskListener listener)
       throws InterruptedException, IOException {
     try {
-      listener.getLogger().println("execute IDD with harSource = " + harSourcePath);
+      listener.getLogger().println("execute IDD with harSource: " + harSourcePath);
       String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), settingsPath, harSourcePath);
       (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(workspace).start()).join();
     } catch (Exception e) {
