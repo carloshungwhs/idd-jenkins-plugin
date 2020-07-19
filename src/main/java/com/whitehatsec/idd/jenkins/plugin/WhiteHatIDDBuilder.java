@@ -10,9 +10,15 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.servlet.ServletException;
 
@@ -75,13 +81,12 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
 
   @DataBoundSetter
   public void setFilterOnSeverity(String filterOnSeverity) {
-    this.filterOnSeverity = EnumUtils.isValidEnum(Severity.class, filterOnSeverity) ? filterOnSeverity : DescriptorImpl.defaultFilterOnSeverity;
+    this.filterOnSeverity = EnumUtils.isValidEnum(Severity.class, filterOnSeverity.toUpperCase()) ? filterOnSeverity : DescriptorImpl.defaultFilterOnSeverity;
   }
 
   @DataBoundSetter
   public void setFailOnSeverity(String failOnSeverity) {
-    this.failOnSeverity = failOnSeverity;
-    this.failOnSeverity = EnumUtils.isValidEnum(Severity.class, failOnSeverity) ? failOnSeverity : DescriptorImpl.defaultFailOnSeverity;
+    this.failOnSeverity = EnumUtils.isValidEnum(Severity.class, failOnSeverity.toUpperCase()) ? failOnSeverity : DescriptorImpl.defaultFailOnSeverity;
   }
 
   @DataBoundSetter
@@ -186,6 +191,17 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
     }
   }
 
+  private void invokeIDD(String settingsPath, String harSourcePath, EnvVars env, FilePath workspace, Launcher launcher, TaskListener listener)
+      throws InterruptedException, IOException {
+    try {
+      listener.getLogger().println("execute IDD with harSource = " + harSourcePath);
+      String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), settingsPath, harSourcePath);
+      (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(workspace).start()).join();
+    } catch (Exception e) {
+      throw e;
+    }
+  }
+
   @Override
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
       throws InterruptedException, IOException {
@@ -210,12 +226,34 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
       listener.getLogger().println("save settings " + settingsPath);
       saveSettings(config, settingsPath);
 
-      String harSourcePath = getHarSourcePath(env, workspace, listener);
-
       listener.getLogger().println("env var " + IDD_HOME + " is " + env.get(IDD_HOME));
-      String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), settingsPath, harSourcePath);
 
-      (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(workspace).start()).join();
+      String harSourcePath = getHarSourcePath(env, workspace, listener);
+      File file = new File(harSourcePath);
+
+      if (file.isDirectory()) {
+        listener.getLogger().println("harSource is a directory: " + harSourcePath);
+
+        try (Stream<Path> walk = Files.walk(Paths.get(harSourcePath))) {
+          List<String> result = walk.map(x -> x.toString())
+            .filter(f -> f.endsWith(".har")).collect(Collectors.toList());
+          result.forEach(harPath -> {
+            try {
+              invokeIDD(settingsPath, harPath, env, workspace, launcher, listener);
+            } catch (IOException e) {
+              Util.displayIOException(e, listener);
+              Functions.printStackTrace(e, listener.fatalError("command execution failed when harSource is a dir"));
+            } catch (InterruptedException e) {
+              Functions.printStackTrace(e, listener.fatalError("job interrupted when harSource is a dir"));
+            }
+          });
+        } catch(IOException e) {
+          throw e;
+        }
+      } else {
+        listener.getLogger().println("harSource is a file: " + harSourcePath);
+        invokeIDD(settingsPath, harSourcePath, env, workspace, launcher, listener);
+      }
     } catch (IOException e) {
       Util.displayIOException(e, listener);
       Functions.printStackTrace(e, listener.fatalError("command execution failed"));
