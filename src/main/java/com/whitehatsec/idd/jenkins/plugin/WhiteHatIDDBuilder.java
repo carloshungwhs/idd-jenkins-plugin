@@ -32,6 +32,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -40,6 +41,7 @@ import hudson.Launcher;
 import hudson.Plugin;
 import hudson.Util;
 import hudson.model.AbstractProject;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
@@ -192,11 +194,16 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
   }
 
   private void invokeIDD(String settingsPath, String harSourcePath, EnvVars env, FilePath workspace, Launcher launcher, TaskListener listener)
-      throws InterruptedException, IOException {
+      throws InterruptedException, IOException, AbortException {
     try {
       listener.getLogger().println("execute IDD with harSource: " + harSourcePath);
       String cmdLine = String.format("%s/target/directed-dast-common -settings-file %s %s", env.get(IDD_HOME), settingsPath, harSourcePath);
-      (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(workspace).start()).join();
+      int exitCode = (launcher.launch().cmdAsSingleString(cmdLine).envs(env).stdout(listener).pwd(workspace).start()).join();
+      listener.getLogger().println("IDD returns exit code: " + exitCode);
+
+      if (exitCode != 0) {
+        throw new AbortException("IDD did not succeed");
+      }
     } catch (Exception e) {
       throw e;
     }
@@ -240,11 +247,16 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
           result.forEach(harPath -> {
             try {
               invokeIDD(settingsPath, harPath, env, workspace, launcher, listener);
+            } catch (AbortException e) {
+              run.setResult(Result.FAILURE);
+              throw new RuntimeException(e);
             } catch (IOException e) {
               Util.displayIOException(e, listener);
               Functions.printStackTrace(e, listener.fatalError("command execution failed when harSource is a dir"));
+              throw new RuntimeException(e);
             } catch (InterruptedException e) {
               Functions.printStackTrace(e, listener.fatalError("job interrupted when harSource is a dir"));
+              throw new RuntimeException(e);
             }
           });
         } catch(IOException e) {
@@ -254,11 +266,16 @@ public class WhiteHatIDDBuilder extends Builder implements SimpleBuildStep {
         listener.getLogger().println("harSource is a file: " + harSourcePath);
         invokeIDD(settingsPath, harSourcePath, env, workspace, launcher, listener);
       }
+    } catch (AbortException e) {
+      run.setResult(Result.FAILURE);
+      throw e;
     } catch (IOException e) {
       Util.displayIOException(e, listener);
       Functions.printStackTrace(e, listener.fatalError("command execution failed"));
+      throw e;
     } catch (InterruptedException e) {
       Functions.printStackTrace(e, listener.fatalError("job interrupted"));
+      throw e;
     }
   }
 
